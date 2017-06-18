@@ -5,6 +5,11 @@ package TypePack;
  */
 public class IntegerType extends TypePack.Type {
     @Override
+    public boolean sameType(Type other){
+        if(other instanceof UndefinedType)return false;
+        return other instanceof IntegerType;
+    }
+    @Override
     public String print() {
         return "int";
     }

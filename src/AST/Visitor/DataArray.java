@@ -20,6 +20,14 @@ public class DataArray{
         return false;
     }
 
+    public Data get(String method){
+        for(Data d : array){
+            if(d.name.equals(method))
+                return d;
+        }
+        return null;
+    }
+
     public boolean contem(String method, String var){
         for(Data d : array){
             Data procurado = new Data();

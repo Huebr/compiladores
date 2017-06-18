@@ -5,6 +5,11 @@ package TypePack;
  */
 public class BooleanType extends TypePack.Type {
     @Override
+    public boolean sameType(Type other){
+        if(other instanceof UndefinedType)return false;
+        return other instanceof BooleanType;
+    }
+    @Override
     public String print() {
         return "boolean";
     }

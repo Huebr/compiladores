@@ -3,6 +3,7 @@ package AST.Visitor;
 import AST.*;
 import SymbolTables.ClassSymbolTable;
 import TypePack.*;
+import TypePack.Type;
 
 /**
  * Created by Clóvis on 16/06/2017.
@@ -36,6 +37,10 @@ public class TypeVisitor implements Visitor {
     public void visit(ClassDeclSimple n) {
         cname = n.i.s;
         cnamePai = "";
+        mname = "";
+        for(int i = 0; i < n.vl.size(); i++){
+            n.vl.get(i).accept(this);
+        }
         for(int i = 0; i < n.ml.size(); i++){
             n.ml.get(i).accept(this);
         }
@@ -45,6 +50,11 @@ public class TypeVisitor implements Visitor {
     public void visit(ClassDeclExtends n) {
         cname = n.i.s;
         cnamePai = n.j.s;
+        mname = "";
+        n.type = VerificarClass(new ClassType(n.j.s,""),n.line_number);
+        for(int i = 0; i < n.vl.size(); i++){
+            n.vl.get(i).accept(this);
+        }
         for(int i = 0; i < n.ml.size(); i++){
             n.ml.get(i).accept(this);
         }
@@ -52,12 +62,20 @@ public class TypeVisitor implements Visitor {
 
     @Override
     public void visit(VarDecl n) {
-
+        n.i.accept(this);
+        n.i.accept(this);
+        //System.out.println(n.i.s+""+n.i.type.print());
     }
 
     @Override
     public void visit(MethodDecl n) {
         mname = n.i.s;
+        for(int i = 0; i < n.fl.size(); i++){
+            n.fl.get(i).accept(this);
+        }
+        for(int i = 0; i < n.vl.size(); i++){
+            n.vl.get(i).accept(this);
+        }
         for(int i = 0; i < n.sl.size(); i++){
             n.sl.get(i).accept(this);
         }
@@ -65,7 +83,8 @@ public class TypeVisitor implements Visitor {
 
     @Override
     public void visit(Formal n) {
-
+        n.i.accept(this);
+        n.i.accept(this);
     }
 
     @Override
@@ -179,13 +198,15 @@ public class TypeVisitor implements Visitor {
 
     @Override//Exp
     public void visit(Call n) {
-        n.i.type = new MethodType();
-        n.i.accept(this);
+        //TODO verifica var ta verificando se o nome ou se o tipo de argumento é um parametro.
         n.e.accept(this);
+        n.e.accept(this);
+        n.i.type = new MethodType(n.e.type);
+        n.i.accept(this);
         for(int i = 0; i < n.el.size(); i++){
             n.el.get(i).accept(this);
         }
-        n.type = n.i.type;
+        n.type = ((MethodType) n.i.type).retorno;
     }
 
     @Override
@@ -206,11 +227,12 @@ public class TypeVisitor implements Visitor {
     @Override
     public void visit(IdentifierExp n) {
         if(n.type instanceof MethodType){
+            ((MethodType)n.type).retorno = VerificarMethod(((MethodType)n.type).classe,n.s);
         }
         else if(n.type instanceof ClassType){
-            VerificarClass(n.s,n.line_number);
+            n.type = VerificarClass(n.type,n.line_number);
         } else{
-            VerificarVar(n.s,n.line_number);
+            n.type = VerificarVar(n.s,n.line_number);
         }
     }
 
@@ -227,9 +249,9 @@ public class TypeVisitor implements Visitor {
 
     @Override
     public void visit(NewObject n) {
-        n.type = new ClassType(n.i.s, "");
         n.i.type = new ClassType(n.i.s,"");
         n.i.accept(this);
+        n.type=n.i.type;
     }
 
     @Override
@@ -241,47 +263,85 @@ public class TypeVisitor implements Visitor {
     @Override
     public void visit(Identifier n) {
         if(n.type instanceof MethodType){
+            ((MethodType)n.type).retorno = VerificarMethod(((MethodType)n.type).classe,n.s);
         }
         else if(n.type instanceof ClassType){
-            VerificarClass(n.s,n.line_number);
+            n.type = VerificarClass(n.type,n.line_number);
         } else{
-            VerificarVar(n.s,n.line_number);
+            n.type = VerificarVar(n.s,n.line_number);
         }
     }
 
-    private void VerificarMethod(String s,int n) {
-        ClassSymbolTable ta = BuildSymbolGlobalTableVisitor.global.lookUp(cname);
-        ClassSymbolTable tb = new ClassSymbolTable();
-        if(BuildSymbolGlobalTableVisitor.global.lookUp(ta.nomedoPai)!=null){
-            tb = BuildSymbolGlobalTableVisitor.global.lookUp(ta.nomedoPai);
+    private TypePack.Type VerificarMethod(TypePack.Type tipo,String s) {
+        if( tipo instanceof ClassType){
+            if(BuildSymbolGlobalTableVisitor.global.lookUp(tipo.representation) == null){
+                return new TypePack.UndefinedType();
+            }
+            else if(BuildSymbolGlobalTableVisitor.global.lookUp(tipo.representation).methodList.containsKey(s)){
+                return (TypePack.Type) BuildSymbolGlobalTableVisitor.global.lookUp(tipo.representation).methodList.get(s);
+            }
+            else if(!(((ClassType) tipo).baseRepresentation.equals(""))){
+                if(BuildSymbolGlobalTableVisitor.global.lookUp(((ClassType) tipo).baseRepresentation).methodList.containsKey(s)){
+                    return (TypePack.Type) BuildSymbolGlobalTableVisitor.global.lookUp(((ClassType) tipo).baseRepresentation).methodList.get(s);
+                }
+                else return new TypePack.UndefinedType();
+            }
+            else return new TypePack.UndefinedType();
         }
-        if(!(ta.methodList.containsKey(s)||tb.methodList.containsKey(s)))
-            System.out.println("Erro! metodo  \'"+s +"\' não declarado na linha: "+n + cname);
+        else return new TypePack.UndefinedType();
     }
 
-    public void VerificarClass(String s,int n){
-        if(BuildSymbolGlobalTableVisitor.global.lookUp(s) == null)
-            System.out.println("Erro! classe \'"+s +"\' não declarado na linha: "+n);
+    public TypePack.Type VerificarClass(TypePack.Type s,int n){
+        if(BuildSymbolGlobalTableVisitor.global.lookUp(s.representation) == null) {
+            System.out.println("Erro! classe \'" + s.representation + "\' não declarado na linha: " + n);
+            return new TypePack.UndefinedType();
+        }
+        return BuildSymbolGlobalTableVisitor.global.lookUp(s.representation).type;
     }
     //TODO, caso a variavel esteja na tabela, deve-se passar o tipo para s. S deve ser o nódulo.
     //haha eu gosto de hamburger
-    public void VerificarVar(String n , int ln) {
-        //ArrayAssign n = ;
+    public TypePack.Type VerificarVar(String n , int ln) {
         if(mname.equals("main")){
             System.out.println("Não pode haver declaracao na main " + n + " " + ln);
-        } else{
+        }
+        TypePack.Type meutipo = TipoDaVariavel(n);
+        if(meutipo instanceof UndefinedType)
+            System.out.println("Erro! Variaver \'"+ n + "\' não declarada." + mname+ " " + cname + " " + ln);
+        return meutipo;
+    }
+
+    public TypePack.Type TipoDaVariavel(String n){
+        if(mname.equals("main")){
+            return new TypePack.UndefinedType();
+        }
+        else{
             DataArray dataArray = (DataArray) BuildSymbolLocalTableVisitor.localTable.get(cname);
             ClassSymbolTable table = BuildSymbolGlobalTableVisitor.global.lookUp(cname);
             if(cnamePai.equals("")){
-                if(!(table.varList.containsKey(n) || dataArray.contem(mname,n)))
-                    System.out.println("Erro! Variaver \'"+ n + "\' não declarada." + mname+ " " + cname + " " + ln);
+                if(dataArray.contem(mname,n)){
+                    return dataArray.get(mname).get(n).ttype;
+                }
+                else if(table.varList.containsKey(n)){
+                    return (Type) table.varList.get(n);
+                }
+                else {
+                    return new TypePack.UndefinedType();
+                }
             }
             else{
-                ClassSymbolTable tablePai = BuildSymbolGlobalTableVisitor.global.lookUp(table.nomedoPai);
-                if(!(table.varList.containsKey(n) || dataArray.contem(mname,n)|| tablePai.varList.containsKey(n)))
-                    System.out.println("Erro! Variaver \'"+ n + "\' não declarada." + mname + " " + cname+ " " + ln);
+                if (dataArray.contem(mname, n)) {
+                    return dataArray.get(mname).get(n).ttype;
+                } else if (table.varList.containsKey(n)) {
+                    return (Type) table.varList.get(n);
+                }
+                else if(BuildSymbolGlobalTableVisitor.global.lookUp(table.nomedoPai)!=null) {
+                    ClassSymbolTable tablePai = BuildSymbolGlobalTableVisitor.global.lookUp(table.nomedoPai);
+                    if (tablePai.varList.containsKey(n)) {
+                        return (Type) tablePai.varList.get(n);
+                    }
+                }
+                return new TypePack.UndefinedType();
             }
-
         }
     }
 }

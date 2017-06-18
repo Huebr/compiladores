@@ -16,6 +16,18 @@ public class Data{
         scope = new ArrayList<Data>();
     }
 
+    public Data get(String var){
+        for(Data a : scope){
+            if(a.name.equals(var))
+                return a;
+        }
+        for(Data a : param){
+            if(a.name.equals(var))
+                return a;
+        }
+        return null;
+    }
+
     public boolean contains(Data d){
         for(Data a : scope){
             //System.out.println("\n" +d.name +  "===" + a.name +"||" +(a.named.name));

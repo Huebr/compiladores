@@ -8,7 +8,8 @@ public class ArrayType extends Type {
     public int size;
     @Override
     public boolean sameType(Type other){
-        return false;
+        if(other instanceof UndefinedType)return false;
+        return other instanceof ArrayType;
     }
 
     @Override

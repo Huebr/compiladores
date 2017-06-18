@@ -8,4 +8,9 @@ public class UndefinedType extends Type{
     public String print() {
         return "undefined";
     }
+
+    @Override
+    public boolean sameType(Type otherType) {
+        return false;
+    }
 }

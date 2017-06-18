@@ -9,6 +9,11 @@ public class VoidType extends Type{
     }
 
     @Override
+    public boolean sameType(Type other){
+        if(other instanceof UndefinedType)return false;
+        return other instanceof VoidType;
+    }
+    @Override
     public String print() {
         return "void";
     }

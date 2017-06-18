@@ -15,6 +15,7 @@ public class ClassType extends Type{
     }
     @Override
     public boolean sameType(Type other){
+        if(other instanceof UndefinedType)return false;
         if(other instanceof ClassType){
             return representation.equals(other.representation);
         }

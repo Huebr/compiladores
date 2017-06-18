@@ -6,21 +6,23 @@ class BinarySearch{
 // This class contains an array of integers and
 // methods to initialize, print and search the array
 // using Binary Search
-
-class BS {
+class HueBr extends BS{
+    public int Start(int peido){
+        return 1;
+    }
+}
+class BS extends HueBr{
     int[] number ;
     int size ;
-    Hu3br si;
 
     // Invoke methods to initialize, print and search
     // for elements on the array
-    public xd Start(int sz){
+    public int Start(int sz){
         int aux01 ;
         int aux02 ;
         aux01 = this.Init(sz);
         aux02 = this.Print();
-        aux01 = new BS().Start(12);
-        aux1 = true + 22;
+        aux01 = true;
         if (this.Search(8)) System.out.println(1) ;
         else System.out.println(0) ;
         if (this.Search(19)) System.out.println(1) ;
@@ -41,6 +43,9 @@ class BS {
         return 999 ;
     }
 
+    public int Compare2(HueBr haha){
+        return 0;
+    }
 
     // Search for a specific value (num) using
     // binary search
@@ -79,7 +84,6 @@ class BS {
     // This method computes and returns the
     // integer division of a number (num) by 2
     public int Div(int num){
-        Padawan jedi ;
         int count01 ;
         int count02 ;
         int aux03 ;
