@@ -1,0 +1,203 @@
+/*
+ * CUP specification for the parser for a simple demo language
+ * Change this into the parser for your implementation of MiniJava.
+ */
+
+package Parser;
+
+import Throwables.*;
+import AST.*;
+import java.util.*;
+import java_cup.runtime.*;
+
+
+/* Terminals (tokens returned by the scanner) */
+
+/* reserved words: */
+terminal BOOLEANO;
+terminal INTEGER;
+terminal STRING;
+terminal IF, ELSE, WHILE, RETURN;
+terminal CLASS, EXTENDS;
+terminal PUBLIC, STATIC, VOID, MAIN;
+terminal TRUE, FALSE, THIS;
+terminal LENGTH;
+terminal NEW;
+terminal SYSO;
+
+/* operators and friends: */
+terminal PLUS, MINUS, MULTI, AND, LESS, ASSIGN, NEGATION, DOT, VIRGULA;
+
+/* delimiters: */
+terminal LCOCHETE, RCOCHETE,
+    LPAREN, RPAREN,
+    LCHAVE, RCHAVE,
+    SCOLON;
+
+/* tokens with values: */
+terminal String IDENTIFIER;
+terminal Integer INTEGER_LITERAL;
+
+/* Nonterminals */
+
+nonterminal Program Program;
+nonterminal StatementList StatementList;
+nonterminal MainClass MainClass;
+nonterminal MethodDecl MethodDecl;
+nonterminal MethodDeclList MethodDeclList;
+nonterminal Statement Statement;
+nonterminal Exp Expression;
+nonterminal ArrayLookup ArrayLookup;
+nonterminal ArrayLength ArrayLength;
+nonterminal Identifier Identifier;
+nonterminal TypePack TypePack;
+nonterminal VarDecl VarDeclaration;
+nonterminal VarDeclList VarDeclarationList;
+nonterminal Formal FormalParameter;
+nonterminal FormalList FormalParameterList;
+nonterminal FormalList FormalParameterListAndParens;
+nonterminal ExpList MethodInvocationParameterList;
+nonterminal ExpList ExpressionList;
+nonterminal ClassDecl ClassDecl;
+nonterminal ClassDeclList ClassDeclList;
+
+/* Precedence declarations */
+
+precedence left ASSIGN;
+precedence left AND;
+precedence left LESS;
+precedence left PLUS, MINUS;
+precedence left MULTI;
+precedence right NEGATION, NEW;
+precedence left DOT;
+
+/* Productions */
+
+Program ::= MainClass:m ClassDeclList:c
+            {: RESULT = new Program(m, c, mleft); :};
+
+// Need to go backwards or things break. AST node type StatementList
+// ensures that the ordering all works later on.
+StatementList ::= Statement:s StatementList:l
+            {: RESULT = l; l.add(s); :}
+        |
+            {: RESULT = new StatementList(0); :};
+
+MainClass ::= CLASS:c Identifier:id LCHAVE PUBLIC STATIC VOID MAIN LPAREN STRING LCOCHETE RCOCHETE Identifier:args RPAREN LCHAVE Statement:stmt RCHAVE RCHAVE
+            {: RESULT = new MainClass(id, args, stmt, cleft); :};
+
+ClassDecl ::= CLASS Identifier:i LCHAVE VarDeclarationList:v MethodDeclList:m RCHAVE
+            {: RESULT = new ClassDeclSimple(i, v, m, ileft); :}
+        | CLASS Identifier:i EXTENDS Identifier:parent LCHAVE VarDeclarationList:v MethodDeclList:m RCHAVE
+            {: RESULT = new ClassDeclExtends(i, parent, v, m, ileft); :};
+
+ClassDeclList ::=
+            {: RESULT = new ClassDeclList(0); :}
+        | ClassDecl:c ClassDeclList:l
+            {: RESULT = l; l.add(c); :};
+
+MethodDeclList ::=
+            {: RESULT = new MethodDeclList(0); :}
+        | MethodDecl:m MethodDeclList:l
+            {: RESULT = l; l.add(m); :};
+
+MethodDecl ::= PUBLIC:p TypePack:t Identifier:i FormalParameterListAndParens:params LCHAVE VarDeclarationList:vars StatementList:stmts RETURN Expression:rv SCOLON RCHAVE
+            {: RESULT = new MethodDecl(t, i, params, vars, stmts, rv, pleft); :};
+
+Statement   ::= Identifier:id ASSIGN Expression:expr SCOLON
+                {: RESULT = new Assign(id, expr, idleft); :}
+            | IF:ifKeyword LPAREN Expression:expr RPAREN Statement:thenStmt ELSE Statement:elseStmt
+                {: RESULT = new If(expr, thenStmt, elseStmt, ifKeywordleft); :}
+            | SYSO:s LPAREN Expression:e RPAREN SCOLON
+                {: RESULT = new Print(e, sleft); :}
+            | Identifier:id LCOCHETE Expression:e RCOCHETE ASSIGN Expression:v SCOLON
+                    {: RESULT = new ArrayAssign(id, e, v, idleft); :}
+            | WHILE:w LPAREN Expression:cond RPAREN Statement:s
+                    {: RESULT = new While(cond, s, wleft); :}
+            | LCHAVE StatementList:s RCHAVE
+                    {: RESULT = new Block(s, sleft); :};
+
+Identifier  ::= IDENTIFIER:id
+                {: RESULT = new Identifier(id, idleft); :};
+
+Expression    ::= IDENTIFIER:name
+            {: RESULT = new IdentifierExp(name, nameleft); :}
+        | Expression:arg1 PLUS Expression:arg2
+            {: RESULT = new Plus(arg1, arg2, arg1left); :}
+        | Expression:arg1 MINUS Expression:arg2
+            {: RESULT = new Minus(arg1, arg2, arg1left); :}
+        | Expression:arg1 MULTI Expression:arg2
+            {: RESULT = new Times(arg1, arg2, arg1left); :}
+        | Expression:arg1 LESS Expression:arg2
+            {: RESULT = new LessThan(arg1, arg2, arg1left); :}
+        | Expression:arg1 AND Expression:arg2
+            {: RESULT = new And(arg1, arg2, arg1left); :}
+        | LPAREN Expression:expr RPAREN
+            {: RESULT = expr; :}
+        | NEGATION:not Expression:expr
+            {: RESULT = new Not(expr, notleft); :}
+        | TRUE:t
+            {: RESULT = new True(tleft); :}
+        | FALSE:f
+            {: RESULT = new False(fleft); :}
+        | THIS:t
+            {: RESULT = new This(tleft); :}
+        | NEW:n Identifier:i LPAREN RPAREN
+            {: RESULT = new NewObject(i, nleft); :}
+        | ArrayLength:l
+            {: RESULT = l; :}
+        | ArrayLookup:l
+            {: RESULT = l; :}
+        | NEW:n INTEGER LCOCHETE Expression:e RCOCHETE
+            {: RESULT = new NewArray(e, nleft); :}
+        | Expression:e DOT Identifier:id MethodInvocationParameterList:l
+            {: RESULT = new Call(e, id, l, eleft); :}
+        | INTEGER_LITERAL:i
+            {: RESULT = new IntegerLiteral(i.intValue(), ileft); :};
+
+ArrayLength ::= Expression:e DOT LENGTH
+            {: RESULT = new ArrayLength(e, eleft); :};
+
+ArrayLookup ::= Expression:e LCOCHETE Expression:i RCOCHETE
+            {: RESULT = new ArrayLookup(e, i, eleft); :};
+
+TypePack ::= INTEGER:i
+            {: RESULT = new IntegerType(ileft); :}
+        | BOOLEANO:b
+            {: RESULT = new BooleanType(bleft); :}
+        | Identifier:i
+            {: RESULT = new IdentifierType(i.s, ileft); :}
+        | INTEGER:i LCOCHETE RCOCHETE
+            {: RESULT = new IntArrayType(ileft); :};
+
+VarDeclaration ::= TypePack:t Identifier:i SCOLON
+            {: RESULT = new VarDecl(t, i, tleft); :};
+
+VarDeclarationList ::=
+            {: RESULT = new VarDeclList(0); :}
+        | VarDeclarationList:l VarDeclaration:e
+            {: RESULT = l; l.add(e); :};
+
+FormalParameter ::= TypePack:t Identifier:i
+            {: RESULT = new Formal(t, i, tleft); :};
+
+FormalParameterListAndParens ::= LPAREN:l RPAREN
+            {: RESULT = new FormalList(lleft); :}
+        | LPAREN FormalParameterList:params RPAREN
+            {: RESULT = params; :};
+
+FormalParameterList ::= FormalParameter:p VIRGULA FormalParameterList:l
+            {: RESULT = l; l.add(p); :}
+        | FormalParameter:p
+            {: RESULT = new FormalList(pleft); RESULT.add(p); :};
+
+MethodInvocationParameterList ::= LPAREN:l RPAREN
+            {: RESULT = new ExpList(lleft); :}
+        | LPAREN:l ExpressionList:e RPAREN
+            {: RESULT = e; :}
+        ;
+
+ExpressionList ::= Expression:e
+            {: RESULT = new ExpList(eleft); RESULT.add(e); :}
+        | Expression:e VIRGULA ExpressionList:l
+            {: RESULT = l; RESULT.add(e); :};
