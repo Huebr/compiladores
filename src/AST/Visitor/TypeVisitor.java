@@ -256,7 +256,7 @@ public class TypeVisitor implements Visitor {
             tb = BuildSymbolGlobalTableVisitor.global.lookUp(ta.nomedoPai);
         }
         if(!(ta.methodList.containsKey(s)||tb.methodList.containsKey(s)))
-            System.out.println("Erro! metodo  \'"+s +"\' não declarado na linha: "+n + cname);;
+            System.out.println("Erro! metodo  \'"+s +"\' não declarado na linha: "+n + cname);
     }
 
     public void VerificarClass(String s,int n){
@@ -264,9 +264,10 @@ public class TypeVisitor implements Visitor {
             System.out.println("Erro! classe \'"+s +"\' não declarado na linha: "+n);
     }
     //TODO, caso a variavel esteja na tabela, deve-se passar o tipo para s. S deve ser o nódulo.
+    //haha eu gosto de hamburger
     public void VerificarVar(String n , int ln) {
         //ArrayAssign n = ;
-        if(mname == "main"){
+        if(mname.equals("main")){
             System.out.println("Não pode haver declaracao na main " + n + " " + ln);
         } else{
             DataArray dataArray = (DataArray) BuildSymbolLocalTableVisitor.localTable.get(cname);
