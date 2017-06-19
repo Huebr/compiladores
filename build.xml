@@ -82,6 +82,11 @@
               fork="true" input="SamplePrograms/Example.java">
         </java>
     </target>
+  <target name="test-codegen" depends="compile">
+    <java classname="TestCodegen" classpath="build/classes;lib/java-cup-11b.jar"
+          fork="true" input="SamplePrograms/Example.java">
+    </java>
+  </target>
 
   <target name="test-parser" depends="compile">
     <java classname="TestParser" classpath="build/classes;lib/java-cup-11b.jar"
