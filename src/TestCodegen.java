@@ -17,6 +17,8 @@ public class TestCodegen {
             BuildSymbolGlobalTableVisitor visitorpass1 = new BuildSymbolGlobalTableVisitor();
             BuildSymbolLocalTableVisitor visitorpass2 = new BuildSymbolLocalTableVisitor();
             BuildThirdParseVisitor visitorpass4 = new BuildThirdParseVisitor();
+            ComputeOffsetVisitor visitoroffeset = new ComputeOffsetVisitor();
+            CodeGenVisitor visitorgen = new CodeGenVisitor();
             TypeVisitor visitorpass3 = new TypeVisitor();
             scanner s = new scanner(new BufferedReader(new InputStreamReader(System.in)));
             parser p = new parser(s);
@@ -29,7 +31,9 @@ public class TestCodegen {
             pro.accept(visitorpass2);
             pro.accept(visitorpass3);
             pro.accept(visitorpass4);
-            pro.accept(new CodeGenVisitor());
+            pro.accept(visitoroffeset);
+            visitorgen.setVtable(visitoroffeset.getvtable());
+            pro.accept(visitorgen);
             System.out.print("\n");
             System.out.print("\nGlobal localTable completed\n\n");
             visitorpass1.print();

@@ -79,6 +79,7 @@ public class TypeVisitor implements Visitor {
         for(int i = 0; i < n.sl.size(); i++){
             n.sl.get(i).accept(this);
         }
+        n.e.accept(this);
     }
 
     @Override
@@ -136,7 +137,8 @@ public class TypeVisitor implements Visitor {
     public void visit(Assign n) {
         n.i.accept(this);
         n.e.accept(this);
-        //TODO Pode dar merda.
+        n.type=n.i.type;
+        //TODO Deu merda.
     }
 
     @Override // Statment
